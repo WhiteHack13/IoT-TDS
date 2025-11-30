@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel IoT – Control de Lámpara</title>
+  <style>
+    :root {
+      --color-on: #2ecc71;
+      --color-off: #e74c3c;
+      --color-auto: #f1c40f;
+      --bg-dark: #0a0a0a;
+      --bg-gradient: linear-gradient(145deg, #101820, #0a0a0a);
+      --text-light: #e0e0e0;
+      --accent: #88CFE0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      transition: background 0.5s ease;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-bottom: 0.3em;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #bbb;
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+      max-width: 400px;
+      width: 90%;
+      transition: transform 0.3s ease;
+    }
+
+    .panel:hover {
+      transform: scale(1.02);
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      padding: 15px 25px;
+      margin: 10px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      font-weight: 500;
+      transition: all 0.25s;
+    }
+
+    button i {
+      margin-right: 8px;
+      font-size: 1.3rem;
+    }
+
+    #on {
+      background-color: var(--color-on);
+      box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+    }
+    #off {
+      background-color: var(--color-off);
+      box-shadow: 0 0 15px rgba(231, 76, 60, 0.4);
+    }
+    #auto {
+      background-color: var(--color-auto);
+      color: black;
+      box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    }
+
+    button:hover {
+      transform: scale(1.07);
+      filter: brightness(1.1);
+    }
+
+    #estado {
+      margin-top: 30px;
+      font-size: 1rem;
+      color: #ccc;
+      transition: all 0.4s ease;
+    }
+
+    .status-led {
+      margin: 20px auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #333;
+      box-shadow: 0 0 10px #111;
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+
+    .status-led.on {
+      background: var(--color-on);
+      box-shadow: 0 0 25px var(--color-on);
+    }
+
+    .status-led.off {
+      background: var(--color-off);
+      box-shadow: 0 0 25px var(--color-off);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 10px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      button {
+        width: 80%;
+      }
+    }
+  </style>
+  <script src="https://kit.fontawesome.com/a2d9d6b5ff.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="panel">
+    <h1>💡 Control de Lámpara IoT</h1>
+    <p>Node-RED + Arduino Uno + Relay + LDR</p>
+
+    <button id="on" onclick="enviar('ON')"><i class="fas fa-lightbulb"></i> Encender</button>
+    <button id="off" onclick="enviar('OFF')"><i class="fas fa-power-off"></i> Apagar</button>
+    <button id="auto" onclick="enviar('AUTO')"><i class="fas fa-microchip"></i> Modo Automático</button>
+
+    <div class="status-led" id="led"></div>
+    <div id="estado">Esperando comando...</div>
+  </div>
+
+  <footer>© 2025 Sistema IoT – ANSEC | WhiteHack</footer>
+
+  <script>
+    async function enviar(cmd) {
+  document.getElementById("estado").innerText = "Enviando comando: " + cmd + "...";
+  try {
+    const res = await fetch("/lampara", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cmd: cmd })
+    });
+    if (res.ok) {
+      document.getElementById("estado").innerText = "Comando " + cmd + " enviado correctamente ✅";
+    } else {
+      document.getElementById("estado").innerText = "Error al enviar comando ❌";
+    }
+  } catch (e) {
+    document.getElementById("estado").innerText = "No se pudo conectar con Node-RED 😕";
+  }
+}
+
+  </script>
+</body>
+</html>
