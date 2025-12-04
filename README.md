@@ -16,3 +16,19 @@ flowchart LR
   B --> C
   ```
 ---
+
+```tex
+Inline: \( a^2 + b^2 = c^2 \)
+
+Bloque:
+$$
+\int_0^1 x^2 dx
+$$
+```
+Inline: \( a^2 + b^2 = c^2 \)
+
+Bloque:
+$$
+\int_0^1 x^2 dx
+$$
+ ```
