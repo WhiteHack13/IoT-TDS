@@ -9,6 +9,10 @@
 > Esto es un tip
 
 
-flowchart LR 
-  A --> B 
-  B --> C 
+# 23. DIAGRAMAS (MERMAID)
+```mermaid
+flowchart LR
+  A --> B
+  B --> C
+  ```
+---
