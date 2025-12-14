@@ -99,3 +99,7 @@ function n(){
 
 > [!TIP]
 > Esto es un tip
+
+flowchart LR
+  A --> B
+  B --> C
