@@ -100,6 +100,10 @@ function n(){
 > [!TIP]
 > Esto es un tip
 
+# 23. DIAGRAMAS (MERMAID)
+```mermaid
 flowchart LR
   A --> B
   B --> C
+  ```
+---
