@@ -142,7 +142,7 @@
 </head>
 <body>
   <div class="panel">
-    <h1>💡 Control de Lámpara IoT</h1>
+    <h1>Control de Lámpara IoT</h1>
     <p>Node-RED + Arduino Uno + Relay + LDR</p>
 
     <button id="on" onclick="enviar('ON')"><i class="fas fa-lightbulb"></i> Encender</button>
@@ -153,7 +153,7 @@
     <div id="estado">Esperando comando...</div>
   </div>
 
-  <footer>© 2025 Sistema IoT – ANSEC | WhiteHack</footer>
+  <footer>© 2025 Sistema IoT | WhiteHack</footer>
 
   <script>
     async function enviar(cmd) {
@@ -165,12 +165,12 @@
       body: JSON.stringify({ cmd: cmd })
     });
     if (res.ok) {
-      document.getElementById("estado").innerText = "Comando " + cmd + " enviado correctamente ✅";
+      document.getElementById("estado").innerText = "Comando " + cmd + " enviado correctamente";
     } else {
-      document.getElementById("estado").innerText = "Error al enviar comando ❌";
+      document.getElementById("estado").innerText = "Error al enviar comando";
     }
   } catch (e) {
-    document.getElementById("estado").innerText = "No se pudo conectar con Node-RED 😕";
+    document.getElementById("estado").innerText = "No se pudo conectar con Node-RED";
   }
 }
 
