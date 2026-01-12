@@ -1,109 +1,51 @@
-# Título de tipo 1 - Equivalante a H1 de HTML
-## Título de tipo 2 - Equivalante a H2 de HTML
-### Título de tipo 3 - Equivalante a H3 de HTML
-#### Título de tipo 4 - Equivalante a H4 de HTML
-##### Título de tipo 5 - Equivalante a H5 de HTML
-###### Título de tipo 6 - Equivalante a H6 de HTML
-
-así es un parrafo.  
-___Otra línea___  
-***Otra línea***  
-~~Otra línea~~
-```php
-echo 'Hola mundo';
-function n(){
-
-}
-```
-> Esto es una cita
-## Listas  ordenadas
-1. elemento 1
-2. elemento 2
-    - elemento 2.1
-        - elemento 2.1
-        - elemento 2.1
-        - elemento 2.1
-    - elemento 2.2
-3. elemento 3
-    - elemento 3.1
-4. elemento 4
-5. elemento 5
-6. elemento 6
-## Listas no ordenadas
-- elemento 1
-- elemento 2
-    - elemento 2.1
-        - elemento 2.1
-        - elemento 2.1
-        - elemento 2.1
-    - elemento 2.2
-- elemento 3
-    - elemento 3.1
-- elemento 4
-- elemento 5
-- elemento 6
-
-### En HTML
-<ul>
-    <li>item</li>
-    <li>item</li>
-    <li>item</li>
-    <li>item</li>
-</ul>
-
-<ol>
-    <li>item</li>
-    <li>item</li>
-    <li>item</li>
-    <li>item</li>
-</ol>
-
-- [x] Tarea completada
-- [ ] Tarea incompleta
-
-## Enlaces
-[Ir a google](https://google.com "Ir a Google")  
-![texto de la imagen](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVlmWueUsfk-7eDhFEOyKZAUkQVLj2fpWqSw&s)
-
-### Ejemplo de Tabla HTML 
-<table>
-    <tbody>
-        <th>
-            <td>item</td>
-            <td>item</td>
-            <td>item</td>
-            <td>item</td>
-        </th>
-        <tr>
-            <td>cuerpo</td>
-            <td>cuerpo</td>
-            <td>cuerpo</td>
-            <td>cuerpo</td>
-        </tr>
-    </tbody>
-</table>
-
----
-<!-- Esto es un comentario y no sale en el PDF -->
-### Ejemplo de Tabla en Markdown
-|item|item2|item3|
-|----|-----|-----|
-|Cuerpo|Cuerpo|Cuerpo|
-|Cuerpo|Cuerpo|Cuerpo|
+# IoT-TDS
+Repositorio de clase para practicas de Internet de las Cosas (IoT). Aqui se agrupan proyectos con firmware, flujos de Node-RED, documentos y recursos de apoyo.
 
 > [!NOTE]
-> Esto es una nota
+> Material academico para la clase de IoT (TDS).
 
-> [!WARNING]
-> Esto es una advertencia
+## Proyectos destacados
+| Proyecto | Descripcion | Contenido principal |
+|---|---|---|
+| `Lámpara-IoT` | Control de lampara con sensor de luz e interfaz web. | `CodeArduino.txt`, `Flows.json`, `control-lampara.html`, `Diagrama.png`, `SensorLuz.pdf` |
+| `FireStore-SensorUltrsonico` | Lecturas con sensor ultrasonico y almacenamiento en Firebase. | `CodigoArduino.txt`, `flows.json`, `FireBase-SensorUltrasonico.pdf` |
+| `Markdown` | Guia rapida de Markdown para documentacion. | `Guía-Markdown.md`, `Guía-Markdown.pdf` |
 
-> [!TIP]
-> Esto es un tip
+## Vista rapida
+![Diagrama de Lampara IoT](Lámpara-IoT/Diagrama.png)
 
-# 23. DIAGRAMAS (MERMAID)
-```mermaid
-flowchart LR
-  A --> B
-  B --> C
-  ```
----
+## Estructura del repositorio
+```text
+.
+├─ FireStore-SensorUltrsonico/
+│  ├─ CodigoArduino.txt
+│  ├─ flows.json
+│  └─ FireBase-SensorUltrasonico.pdf
+├─ Lámpara-IoT/
+│  ├─ CodeArduino.txt
+│  ├─ control-lampara.html
+│  ├─ Diagrama.png
+│  ├─ Flows.json
+│  └─ SensorLuz.pdf
+├─ Markdown/
+│  ├─ Guía-Markdown.md
+│  └─ Guía-Markdown.pdf
+└─ README.md
+```
+
+## Requisitos sugeridos
+- Arduino IDE o compatible para cargar el firmware.
+- Node-RED para importar y ejecutar flujos.
+- Navegador web moderno para la interfaz HTML.
+- Cuenta y proyecto en Firebase si el flujo lo requiere.
+
+## Uso rapido
+1. Abre el PDF del proyecto para revisar teoria y pasos.
+2. Importa el flujo de Node-RED desde `Flows.json` o `flows.json`.
+3. Carga el codigo Arduino del archivo `.txt` en tu placa.
+4. Prueba la interfaz web cuando aplique (por ejemplo `control-lampara.html`).
+
+## Recursos
+- Diagramas y documentacion dentro de cada carpeta de proyecto.
+- Guia de Markdown en `Markdown/` para mejorar la documentacion.
+

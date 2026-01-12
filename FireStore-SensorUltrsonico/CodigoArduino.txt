@@ -1,0 +1,33 @@
+// --- SENSOR ULTRASÓNICO HC-SR04 CON ARDUINO ---
+#define TRIG 9
+#define ECHO 10
+
+long duracion;
+float distancia;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+}
+
+void loop() {
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(5);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  duracion = pulseIn(ECHO, HIGH, 25000); // Timeout de 25 ms
+  distancia = duracion * 0.0343 / 2;
+
+  if (duracion == 0) {
+    Serial.println("{\"distancia\": -1}"); // -1 indica que no hubo eco
+  } else {
+    Serial.print("{\"distancia\":");
+    Serial.print(distancia, 2);
+    Serial.println("}");
+  }
+
+  delay(10000);
+}

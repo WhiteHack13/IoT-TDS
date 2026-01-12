@@ -1,0 +1,170 @@
+[
+    {
+        "id": "b1a1c2c3d4e5f6",
+        "type": "tab",
+        "label": "Control Lámpara IoT",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "http_in_1",
+        "type": "http in",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Endpoint HTTP /lampara",
+        "url": "/lampara",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 120,
+        "wires": [
+            [
+                "parse_json"
+            ]
+        ]
+    },
+    {
+        "id": "parse_json",
+        "type": "json",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "func_command"
+            ]
+        ]
+    },
+    {
+        "id": "func_command",
+        "type": "function",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Procesar comando",
+        "func": "// Asegura que el payload sea un objeto JSON válido\nlet data = {};\n\nif (typeof msg.payload === \"string\") {\n    try {\n        data = JSON.parse(msg.payload);\n    } catch (e) {\n        node.warn(\"Error al parsear JSON: \" + msg.payload);\n        data = {};\n    }\n} else if (typeof msg.payload === \"object\") {\n    data = msg.payload;\n}\n\nlet cmd = (data.cmd || \"\").toUpperCase();\nnode.warn(\"Comando recibido desde la web: \" + cmd);\n\nif (cmd === \"ON\") {\n    msg.payload = \"ON\\n\";\n} else if (cmd === \"OFF\") {\n    msg.payload = \"OFF\\n\";\n} else if (cmd === \"AUTO\") {\n    msg.payload = \"AUTO\\n\";\n} else {\n    msg.payload = \"\";\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 120,
+        "wires": [
+            [
+                "serial_out",
+                "http_response_1",
+                "debug_out"
+            ]
+        ]
+    },
+    {
+        "id": "serial_out",
+        "type": "serial out",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Enviar a Arduino",
+        "serial": "arduino_serial",
+        "x": 900,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "http_response_1",
+        "type": "http response",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Responder al navegador",
+        "statusCode": "",
+        "headers": {},
+        "x": 930,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "debug_out",
+        "type": "debug",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Debug comando enviado",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 930,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "serial_in",
+        "type": "serial in",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Recibir de Arduino",
+        "serial": "arduino_serial",
+        "x": 220,
+        "y": 240,
+        "wires": [
+            [
+                "func_estado",
+                "debug_in"
+            ]
+        ]
+    },
+    {
+        "id": "debug_in",
+        "type": "debug",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Datos desde Arduino",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 470,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "func_estado",
+        "type": "function",
+        "z": "b1a1c2c3d4e5f6",
+        "name": "Procesar estado LAMP",
+        "func": "let txt = msg.payload.trim();\nif (txt.includes(\"LAMP:ON\")) {\n    node.status({fill:\"green\",shape:\"dot\",text:\"Lámpara encendida\"});\n} else if (txt.includes(\"LAMP:OFF\")) {\n    node.status({fill:\"red\",shape:\"ring\",text:\"Lámpara apagada\"});\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "arduino_serial",
+        "type": "serial-port",
+        "serialport": "COM3",
+        "serialbaud": "9600",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": false
+    },
+    {
+        "id": "26048246898a02c2",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-serialport": "2.0.3"
+        }
+    }
+]

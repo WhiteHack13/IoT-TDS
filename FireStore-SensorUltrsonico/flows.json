@@ -1,0 +1,174 @@
+[
+    {
+        "id": "140ac2ef3e8eb6f5",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "218b4fa093623def",
+        "type": "inject",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 2660,
+        "y": 5100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "01df916c699b4cea",
+        "type": "serial in",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "",
+        "serial": "ce5524b7fc8eb5f0",
+        "x": 130,
+        "y": 60,
+        "wires": [
+            [
+                "81ab580b3b6cf83c"
+            ]
+        ]
+    },
+    {
+        "id": "81ab580b3b6cf83c",
+        "type": "json",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 310,
+        "y": 120,
+        "wires": [
+            [
+                "8e569f830f5eaa98",
+                "c2dec9bfe1ad2dc7"
+            ]
+        ]
+    },
+    {
+        "id": "8e569f830f5eaa98",
+        "type": "debug",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "arduino dice:",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 470,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "c2dec9bfe1ad2dc7",
+        "type": "function",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "Preparar datos para enviar",
+        "func": "// Estructura del documento que se enviará a Firestore\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer ya29.a0ATi6K2sairC3uRNMHqNKl2Fh0dmb6Vxm3upl357kpRpJNwxvImcYT3_viYVrRv08f3ezRgULPB5z95ypckjQQz27rnt7Eiqn2JbDDvqsdzDiIa86ClV8EYNDzkMgqUBPBr3edjKFV7bDVrRcoGXUB5jo-B5yLcmK0KA-uYdwL7q-8PTZccVqIr261KGlkjPJv6Du0OPsA-m7lAaCgYKARgSARISFQHGX2Mihc45NRjexksEhI2zDDw9ew0213\"\n};\n\n// Crear estructura compatible con Firestore API\nmsg.payload = {\n    fields: {\n        distancia: { doubleValue: msg.payload.distancia },\n        timestamp: { stringValue: new Date().toISOString() }\n    }\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 160,
+        "wires": [
+            [
+                "80fc22cf4228e8ae"
+            ]
+        ]
+    },
+    {
+        "id": "80fc22cf4228e8ae",
+        "type": "http request",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://firestore.googleapis.com/v1/projects/fir-iot-9d75b/databases/(default)/documents/lecturas",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 590,
+        "y": 280,
+        "wires": [
+            [
+                "00e0a3aacf7c25ca"
+            ]
+        ]
+    },
+    {
+        "id": "00e0a3aacf7c25ca",
+        "type": "debug",
+        "z": "140ac2ef3e8eb6f5",
+        "name": "FireBase dice:",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "ce5524b7fc8eb5f0",
+        "type": "serial-port",
+        "name": "Obtener datos del sensor",
+        "serialport": "COM3",
+        "serialbaud": "9600",
+        "databits": 8,
+        "parity": "none",
+        "stopbits": 1,
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": 10000
+    },
+    {
+        "id": "bb92b0f2a864dfaa",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-serialport": "2.0.3"
+        }
+    }
+]

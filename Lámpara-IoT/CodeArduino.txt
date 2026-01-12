@@ -1,0 +1,71 @@
+#define LDR A0
+#define RELAY 8
+
+int valorLuz = 0;
+int umbralEncender = 350;   // Enciende por debajo de este valor
+int umbralApagar   = 600;   // Apaga por encima de este valor
+bool estadoLuz = false;     // Guarda el estado actual de la lámpara
+bool modoManual = false;    // true = control manual por web, false = automático
+String comando = "";        // texto recibido por Serial
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(RELAY, OUTPUT);
+  digitalWrite(RELAY, HIGH); // relay apagado al inicio
+  Serial.println("Sistema de control automático + manual (Node-RED)");
+}
+
+void loop() {
+  // Revisión de comandos desde Node-RED (control manual)
+  if (Serial.available() > 0) {
+    comando = Serial.readStringUntil('\n');
+    comando.trim();
+
+    if (comando == "ON") {
+      digitalWrite(RELAY, LOW);
+      estadoLuz = true;
+      modoManual = true;
+      Serial.println("LAMP:ON (modo manual)");
+    } 
+    else if (comando == "OFF") {
+      digitalWrite(RELAY, HIGH);
+      estadoLuz = false;
+      modoManual = true;
+      Serial.println("LAMP:OFF (modo manual)");
+    }
+    else if (comando == "AUTO") {
+      modoManual = false;
+      Serial.println("MODO:AUTOMATICO activado");
+    }
+  }
+
+  // Control automático (solo si no está en modo manual)
+  if (!modoManual) {
+    valorLuz = leerPromedioLuz();
+    Serial.print("Nivel de luz (promedio): ");
+    Serial.println(valorLuz);
+
+    if (valorLuz < umbralEncender && !estadoLuz) {
+      digitalWrite(RELAY, LOW);
+      estadoLuz = true;
+      Serial.println("Lámpara encendida (automático - poca luz)");
+    } 
+    else if (valorLuz > umbralApagar && estadoLuz) {
+      digitalWrite(RELAY, HIGH);
+      estadoLuz = false;
+      Serial.println("Lámpara apagada (automático - luz suficiente)");
+    }
+  }
+
+  delay(500);
+}
+
+//Promedio para lectura estable del sensor
+int leerPromedioLuz() {
+  long suma = 0;
+  for (int i = 0; i < 10; i++) {
+    suma += analogRead(LDR);
+    delay(20);
+  }
+  return suma / 10;
+}
