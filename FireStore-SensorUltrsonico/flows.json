@@ -87,7 +87,7 @@
         "type": "function",
         "z": "140ac2ef3e8eb6f5",
         "name": "Preparar datos para enviar",
-        "func": "// Estructura del documento que se enviará a Firestore\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer ya29.a0ATi6K2sairC3uRNMHqNKl2Fh0dmb6Vxm3upl357kpRpJNwxvImcYT3_viYVrRv08f3ezRgULPB5z95ypckjQQz27rnt7Eiqn2JbDDvqsdzDiIa86ClV8EYNDzkMgqUBPBr3edjKFV7bDVrRcoGXUB5jo-B5yLcmK0KA-uYdwL7q-8PTZccVqIr261KGlkjPJv6Du0OPsA-m7lAaCgYKARgSARISFQHGX2Mihc45NRjexksEhI2zDDw9ew0213\"\n};\n\n// Crear estructura compatible con Firestore API\nmsg.payload = {\n    fields: {\n        distancia: { doubleValue: msg.payload.distancia },\n        timestamp: { stringValue: new Date().toISOString() }\n    }\n};\n\nreturn msg;",
+        "func": "// Estructura del documento que se enviará a Firestore\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"tu token\"\n};\n\n// Crear estructura compatible con Firestore API\nmsg.payload = {\n    fields: {\n        distancia: { doubleValue: msg.payload.distancia },\n        timestamp: { stringValue: new Date().toISOString() }\n    }\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
