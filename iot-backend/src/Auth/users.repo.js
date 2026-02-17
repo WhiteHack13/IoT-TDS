@@ -1,15 +1,13 @@
 const bcrypt = require("bcryptjs");
 
 /**
- * Simulación en duro. Para demo de clase:
- * user: demo@iot.com
- * pass: Demo12345!
+ * Simulación en duro. Para demo.
  */
 const hardcodedUsers = [
   {
     id: "u_1",
     email: "demo@iot.com",
-    // hash se genera al iniciar (así no guardas password plano)
+    // hash se genera al iniciar (así no se guarda el password plano)
     passwordHash: null,
     roles: ["user"],
     isActive: true,

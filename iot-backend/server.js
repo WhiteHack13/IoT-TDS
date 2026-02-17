@@ -15,7 +15,7 @@ app.use(helmet());
 // Body parser
 app.use(express.json({ limit: "50kb" }));
 
-// CORS (para tu web)
+// CORS 
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "*",

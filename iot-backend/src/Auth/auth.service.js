@@ -17,7 +17,7 @@ async function login(email, password) {
   const ok = await bcrypt.compare(String(password), user.passwordHash);
   if (!ok) return null;
 
-  // Payload mínimo (no metas datos sensibles)
+  
   const token = signToken({
     sub: user.id,
     email: user.email,
