@@ -1,0 +1,38 @@
+const int LED = 13;
+
+void setup() {
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+  // tres parpadeos cortos
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED, HIGH);
+    delay(200);
+    digitalWrite(LED, LOW);
+    delay(200);
+  }
+
+  delay(400);
+
+  // tres parpadeos largos
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED, HIGH);
+    delay(600);
+    digitalWrite(LED, LOW);
+    delay(200);
+  }
+
+  delay(400);
+
+  // tres parpadeos cortos
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED, HIGH);
+    delay(200);
+    digitalWrite(LED, LOW);
+    delay(200);
+  }
+
+  // Esperar antes de repetir el SOS
+  delay(2000);
+}
