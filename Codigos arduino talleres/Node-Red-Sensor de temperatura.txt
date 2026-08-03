@@ -1,0 +1,54 @@
+#include <DHT.h>
+
+constexpr uint8_t DHT_PIN = 4;
+constexpr uint8_t DHT_TYPE = DHT11;
+constexpr uint8_t LED_PIN = 2;
+constexpr float ALERT_THRESHOLD_C = 35.0;
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
+unsigned long ultimaLectura = 0;
+const unsigned long INTERVALO = 2000;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  dht.begin();
+}
+
+void loop() {
+  unsigned long ahora = millis();
+
+  if (ahora - ultimaLectura < INTERVALO) {
+    return;
+  }
+
+  ultimaLectura = ahora;
+
+  float humedad = dht.readHumidity();
+  float temperatura = dht.readTemperature();
+
+  if (isnan(humedad) || isnan(temperatura)) {
+    Serial.println("{\"error\":\"No se pudo leer el DHT11\"}");
+    return;
+  }
+
+  bool alerta = temperatura >= ALERT_THRESHOLD_C;
+  digitalWrite(LED_PIN, alerta ? HIGH : LOW);
+
+  Serial.print("{\"dispositivo\":\"esp32-01\",");
+  Serial.print("\"temperatura\":");
+  Serial.print(temperatura, 2);
+  Serial.print(",\"humedad\":");
+  Serial.print(humedad, 2);
+  Serial.print(",\"umbral\":");
+  Serial.print(ALERT_THRESHOLD_C, 2);
+  Serial.print(",\"alerta\":");
+  Serial.print(alerta ? "true" : "false");
+  Serial.print(",\"estado\":\"");
+  Serial.print(alerta ? "ALERTA" : "NORMAL");
+  Serial.println("\"}");
+}

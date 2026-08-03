@@ -1,0 +1,262 @@
+[
+  {
+    "id": "flow_serial_temp",
+    "type": "tab",
+    "label": "ESP32 Temperatura Serial",
+    "disabled": false,
+    "info": "Recibe JSON por COM5 a 115200 baudios, muestra dashboard y opcionalmente guarda en Firebase."
+  },
+  {
+    "id": "serial_in_temp",
+    "type": "serial in",
+    "z": "flow_serial_temp",
+    "name": "ESP32 por USB",
+    "serial": "serial_com5_115200",
+    "x": 160,
+    "y": 180,
+    "wires": [
+      [
+        "json_temp"
+      ]
+    ]
+  },
+  {
+    "id": "json_temp",
+    "type": "json",
+    "z": "flow_serial_temp",
+    "name": "Convertir JSON",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 370,
+    "y": 180,
+    "wires": [
+      [
+        "process_temp"
+      ]
+    ]
+  },
+  {
+    "id": "process_temp",
+    "type": "function",
+    "z": "flow_serial_temp",
+    "name": "Validar, alertar y preparar Firebase",
+    "func": "let data = msg.payload;\n\nif (typeof data === \"string\") {\n    data = data.trim();\n    if (!data) return [null, null];\n    try { data = JSON.parse(data); }\n    catch (error) {\n        node.warn(\"La línea recibida no es JSON válido: \" + data);\n        return [null, null];\n    }\n}\n\nif (!data || typeof data !== \"object\" || data.error) return [null, null];\n\nconst temperatura = Number(data.temperatura);\nconst humedad = Number(data.humedad);\nconst umbral = Number(data.umbral ?? 35);\n\nif (!Number.isFinite(temperatura)) {\n    node.warn(\"Temperatura inválida\");\n    return [null, null];\n}\n\nconst alerta = temperatura >= umbral;\nconst fecha = new Date();\nconst lectura = {\n    dispositivo: String(data.dispositivo || \"esp32-01\"),\n    temperatura: Number(temperatura.toFixed(2)),\n    humedad: Number.isFinite(humedad) ? Number(humedad.toFixed(2)) : null,\n    umbral,\n    alerta,\n    estado: alerta ? \"ALERTA\" : \"NORMAL\",\n    fecha: Date.now(),\n    fechaTexto: fecha.toLocaleString(\"es-HN\")\n};\n\nconst dashboardMsg = { topic: \"esp32/serial/temperatura\", payload: lectura };\nconst firebaseBaseUrl = env.get(\"FIREBASE_URL\");\n\nif (!firebaseBaseUrl) {\n    node.status({fill: alerta ? \"red\" : \"green\", shape: \"dot\", text: `${lectura.temperatura} °C - Firebase no configurado`});\n    return [dashboardMsg, null];\n}\n\nconst firebaseMsg = {\n    method: \"POST\",\n    url: firebaseBaseUrl.replace(/\\/$/, \"\") + \"/mediciones.json\",\n    headers: {\"Content-Type\": \"application/json\"},\n    payload: lectura\n};\n\nnode.status({fill: alerta ? \"red\" : \"green\", shape: \"dot\", text: `${lectura.temperatura} °C - ${lectura.estado}`});\nreturn [dashboardMsg, firebaseMsg];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 660,
+    "y": 180,
+    "wires": [
+      [
+        "dashboard_temp",
+        "debug_data"
+      ],
+      [
+        "firebase_request"
+      ]
+    ]
+  },
+  {
+    "id": "dashboard_temp",
+    "type": "ui-template",
+    "z": "flow_serial_temp",
+    "group": "ui_group_serial_temp",
+    "page": "",
+    "ui": "",
+    "name": "Dashboard temperatura",
+    "order": 1,
+    "width": 12,
+    "height": 12,
+    "head": "",
+    "format": "<template>\n<div class=\"temperature-dashboard\">\n  <div class=\"top\"><div><div class=\"label\">MONITOREO SERIAL ESP32</div><h1>Temperatura ambiental</h1></div><div class=\"state\" :class=\"{ alert: isAlert }\">{{ state }}</div></div>\n  <div class=\"cards\">\n    <div class=\"card\"><div class=\"label\">Temperatura</div><div class=\"value\">{{ temperature.toFixed(1) }} <small>°C</small></div><div class=\"bar\"><div class=\"temperature\" :style=\"{width: tempPercent + '%'}\"></div></div><div class=\"foot\">Alerta desde {{ threshold }} °C</div></div>\n    <div class=\"card\"><div class=\"label\">Humedad</div><div class=\"value\">{{ humidity.toFixed(1) }} <small>%</small></div><div class=\"bar\"><div class=\"humidity\" :style=\"{width: humidityPercent + '%'}\"></div></div><div class=\"foot\">Sensor DHT11</div></div>\n    <div class=\"card\"><div class=\"label\">Dispositivo</div><div class=\"device\">{{ device }}</div><div class=\"online\"><span></span> Recibiendo por USB</div><div class=\"foot\">{{ lastUpdate }}</div></div>\n  </div>\n  <div class=\"notice\" :class=\"{ alert: isAlert }\"><strong>{{ isAlert ? 'ALERTA DE TEMPERATURA' : 'Estado normal' }}</strong><div>{{ isAlert ? 'La temperatura superó el umbral.' : 'La temperatura está dentro del rango configurado.' }}</div></div>\n  <div class=\"chart-card\"><div class=\"chart-title\"><div><div class=\"label\">Historial</div><strong>Últimas {{ history.length }} lecturas</strong></div><span>0–60 °C</span></div><svg viewBox=\"0 0 600 170\" preserveAspectRatio=\"none\"><line x1=\"0\" y1=\"150\" x2=\"600\" y2=\"150\" class=\"grid\"/><line x1=\"0\" y1=\"100\" x2=\"600\" y2=\"100\" class=\"grid\"/><line x1=\"0\" y1=\"50\" x2=\"600\" y2=\"50\" class=\"grid\"/><polyline :points=\"points\" class=\"line\"/></svg></div>\n</div>\n</template>\n<script>\nexport default {\n data(){return{temperature:0,humidity:0,threshold:35,device:\"esp32-01\",state:\"ESPERANDO DATOS\",isAlert:false,lastUpdate:\"Sin lecturas\",history:[]}},\n computed:{\n  tempPercent(){return Math.max(0,Math.min(100,this.temperature/60*100))},\n  humidityPercent(){return Math.max(0,Math.min(100,this.humidity))},\n  points(){if(!this.history.length)return\"\";const w=600,h=150,s=this.history.length===1?w:w/(this.history.length-1);return this.history.map((v,i)=>`${i*s},${h-Math.max(0,Math.min(h,v/60*h))}`).join(\" \")}\n },\n watch:{msg:{deep:true,handler(message){const d=message&&message.payload;if(!d||typeof d!==\"object\")return;const t=Number(d.temperatura);if(!Number.isFinite(t))return;this.temperature=t;this.humidity=Number(d.humedad)||0;this.threshold=Number(d.umbral)||35;this.device=d.dispositivo||\"esp32-01\";this.state=d.estado||\"NORMAL\";this.isAlert=Boolean(d.alerta);this.lastUpdate=d.fechaTexto||new Date().toLocaleString();this.history.push(t);if(this.history.length>30)this.history.shift()}}}\n}\n</script>\n<style>\n.temperature-dashboard{font-family:Inter,system-ui,sans-serif;padding:8px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.top h1{margin:3px 0;font-size:2rem}.label{font-size:.76rem;font-weight:800;letter-spacing:.1em;opacity:.62}.state{padding:10px 16px;border-radius:999px;font-weight:800;color:#146c38;background:#dff7e8}.state.alert{color:#a30000;background:#ffe0e0}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card,.notice,.chart-card{background:rgb(var(--v-theme-surface));border:1px solid rgba(120,120,120,.18);border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}.value{font-size:2.4rem;font-weight:850;margin:8px 0 12px}.value small{font-size:1rem;opacity:.7}.device{font-size:1.35rem;font-weight:800;margin:16px 0}.online{font-weight:650;display:flex;align-items:center;gap:8px}.online span{width:10px;height:10px;border-radius:50%;background:#24b36b;box-shadow:0 0 0 5px rgba(36,179,107,.15)}.bar{height:10px;border-radius:999px;background:rgba(120,120,120,.14);overflow:hidden}.bar div{height:100%;border-radius:inherit;transition:width .35s ease}.temperature{background:linear-gradient(90deg,#ffb703,#e63946)}.humidity{background:linear-gradient(90deg,#00b4d8,#0077b6)}.foot{margin-top:10px;font-size:.78rem;opacity:.65}.notice{margin-top:14px;border-left:7px solid #24b36b}.notice.alert{border-left-color:#d90429;color:#8f0018;background:#fff1f1}.chart-card{margin-top:14px}.chart-title{display:flex;justify-content:space-between;align-items:end}.chart-title span{font-size:.8rem;opacity:.65}svg{width:100%;height:220px}.grid{stroke:rgba(120,120,120,.2);stroke-width:1}.line{fill:none;stroke:#e63946;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}@media(max-width:850px){.cards{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}\n</style>",
+    "storeOutMessages": true,
+    "passthru": true,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 990,
+    "y": 130,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "debug_data",
+    "type": "debug",
+    "z": "flow_serial_temp",
+    "name": "Telemetría procesada",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 990,
+    "y": 210,
+    "wires": []
+  },
+  {
+    "id": "firebase_request",
+    "type": "http request",
+    "z": "flow_serial_temp",
+    "name": "Guardar en Firebase",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 990,
+    "y": 290,
+    "wires": [
+      [
+        "debug_firebase"
+      ]
+    ]
+  },
+  {
+    "id": "debug_firebase",
+    "type": "debug",
+    "z": "flow_serial_temp",
+    "name": "Respuesta Firebase",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1220,
+    "y": 290,
+    "wires": []
+  },
+  {
+    "id": "inject_test",
+    "type": "inject",
+    "z": "flow_serial_temp",
+    "name": "Simular alerta",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "esp32/serial/temperatura",
+    "payload": "{\"dispositivo\": \"esp32-01\", \"temperatura\": 38.4, \"humedad\": 62.0, \"umbral\": 35}",
+    "payloadType": "json",
+    "x": 170,
+    "y": 260,
+    "wires": [
+      [
+        "process_temp"
+      ]
+    ]
+  },
+  {
+    "id": "comment_serial",
+    "type": "comment",
+    "z": "flow_serial_temp",
+    "name": "Cierra el Monitor Serial de Arduino antes de desplegar. COM5 solo puede usarlo una aplicación.",
+    "info": "",
+    "x": 390,
+    "y": 90,
+    "wires": []
+  },
+  {
+    "id": "serial_com5_115200",
+    "type": "serial-port",
+    "name": "ESP32 COM5",
+    "serialport": "COM5",
+    "serialbaud": "115200",
+    "databits": "8",
+    "parity": "none",
+    "stopbits": "1",
+    "waitfor": "",
+    "dtr": "none",
+    "rts": "none",
+    "cts": "none",
+    "dsr": "none",
+    "newline": "\\n",
+    "bin": "false",
+    "out": "char",
+    "addchar": "",
+    "responsetimeout": "10000"
+  },
+  {
+    "id": "ui_group_serial_temp",
+    "type": "ui-group",
+    "name": "Monitoreo",
+    "page": "ui_page_serial_temp",
+    "width": "12",
+    "height": "1",
+    "order": 1,
+    "showTitle": false,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "ui_page_serial_temp",
+    "type": "ui-page",
+    "name": "Temperatura Serial",
+    "ui": "ui_base_serial_temp",
+    "path": "/temperatura-serial",
+    "icon": "thermometer",
+    "layout": "grid",
+    "theme": "ui_theme_serial_temp",
+    "order": 1,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "ui_base_serial_temp",
+    "type": "ui-base",
+    "name": "Dashboard IoT Serial",
+    "path": "/dashboard",
+    "includeClientData": true,
+    "acceptsClientConfig": [
+      "ui-notification",
+      "ui-control"
+    ],
+    "showPathInSidebar": false,
+    "navigationStyle": "icon"
+  },
+  {
+    "id": "ui_theme_serial_temp",
+    "type": "ui-theme",
+    "name": "Tema IoT Serial",
+    "colors": {
+      "surface": "#ffffff",
+      "primary": "#e63946",
+      "bgPage": "#f3f6f9",
+      "groupBg": "#ffffff",
+      "groupOutline": "#dfe5ec"
+    },
+    "sizes": {
+      "pagePadding": "16px",
+      "groupGap": "16px",
+      "groupBorderRadius": "16px",
+      "widgetGap": "16px"
+    }
+  }
+]
