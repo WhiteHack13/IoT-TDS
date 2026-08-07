@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, Droplets, Thermometer, Wifi, WifiOff } from "lucide-react";
+import { ArrowDown, ArrowUp, Droplets, Thermometer, TriangleAlert, Wifi, WifiOff } from "lucide-react";
 import { formatDate, formatNumber } from "../../../shared/utils/formatters";
 
 export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZone }) {
   const temperature = summary?.temperatura || {};
   const humidity = summary?.humedad || {};
+  const thresholdExceeded = latest?.alerta === true;
 
   return (
     <aside className="live-reading" aria-labelledby="live-title">
@@ -14,6 +15,21 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
           {sensorFresh ? "Sensor activo" : apiConnected ? "Lectura atrasada" : "Reconectando"}
         </span>
       </div>
+
+      {thresholdExceeded && (
+        <div className="threshold-alert" role="alert" aria-live="assertive">
+          <span className="threshold-alert-icon" aria-hidden="true">
+            <TriangleAlert size={24} strokeWidth={2.4} />
+          </span>
+          <div>
+            <strong>Alerta de temperatura alta</strong>
+            <span>
+              La lectura de {formatNumber(latest?.temperatura)} °C superó el umbral de {formatNumber(latest?.umbral)} °C.
+            </span>
+          </div>
+          <span className="threshold-alert-signal" aria-hidden="true" />
+        </div>
+      )}
 
       <div className="reading-block temperature-reading">
         <Thermometer size={28} />
@@ -38,7 +54,10 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
       <dl className="sensor-facts">
         <div><dt>Dispositivo</dt><dd>{latest?.dispositivo || "—"}</dd></div>
         <div><dt>Ubicación</dt><dd>{latest?.aula || "—"}</dd></div>
-        <div><dt>Estado</dt><dd>{latest?.estado || "Sin datos"}</dd></div>
+        <div>
+          <dt>Estado</dt>
+          <dd><span className={`reading-status ${thresholdExceeded ? "is-alert" : ""}`}>{latest?.estado || "Sin datos"}</span></dd>
+        </div>
         <div><dt>Última lectura</dt><dd>{formatDate(latest?.recibido_en, timeZone)}</dd></div>
       </dl>
     </aside>
