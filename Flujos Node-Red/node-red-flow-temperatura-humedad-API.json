@@ -1,0 +1,156 @@
+[
+    {
+        "id": "ad5d2c519a39f174",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d4c7488313b95741",
+        "type": "mqtt in",
+        "z": "ad5d2c519a39f174",
+        "name": "Telemetría ESP32",
+        "topic": "unev/aulas/aula-01/telemetria",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 240,
+        "wires": [
+            [
+                "e1fc33ee02af3006"
+            ]
+        ]
+    },
+    {
+        "id": "e1fc33ee02af3006",
+        "type": "function",
+        "z": "ad5d2c519a39f174",
+        "name": "Validar telemetría",
+        "func": "const data = msg.payload;\n\n// Validar que el payload sea un objeto\nif (typeof data !== \"object\" || data === null || Array.isArray(data)) {\n    msg.payload = {\n        valido: false,\n        error: \"El payload recibido no es un objeto JSON válido\",\n        recibido: data\n    };\n\n    return [null, msg];\n}\n\n// Campos obligatorios\nconst camposObligatorios = [\n    \"dispositivo\",\n    \"aula\",\n    \"temperatura\",\n    \"humedad\",\n    \"umbral\",\n    \"alerta\",\n    \"estado\",\n    \"uptime\"\n];\n\nconst camposFaltantes = camposObligatorios.filter(\n    campo => data[campo] === undefined || data[campo] === null\n);\n\nif (camposFaltantes.length > 0) {\n    msg.payload = {\n        valido: false,\n        error: \"Faltan campos obligatorios\",\n        camposFaltantes,\n        recibido: data\n    };\n\n    return [null, msg];\n}\n\n// Validar tipos de datos\nconst errores = [];\n\nif (typeof data.dispositivo !== \"string\" || data.dispositivo.trim() === \"\") {\n    errores.push(\"dispositivo debe ser un texto no vacío\");\n}\n\nif (typeof data.aula !== \"string\" || data.aula.trim() === \"\") {\n    errores.push(\"aula debe ser un texto no vacío\");\n}\n\nif (typeof data.temperatura !== \"number\" || !Number.isFinite(data.temperatura)) {\n    errores.push(\"temperatura debe ser un número válido\");\n}\n\nif (typeof data.humedad !== \"number\" || !Number.isFinite(data.humedad)) {\n    errores.push(\"humedad debe ser un número válido\");\n}\n\nif (typeof data.umbral !== \"number\" || !Number.isFinite(data.umbral)) {\n    errores.push(\"umbral debe ser un número válido\");\n}\n\nif (typeof data.alerta !== \"boolean\") {\n    errores.push(\"alerta debe ser true o false\");\n}\n\nif (typeof data.estado !== \"string\" || data.estado.trim() === \"\") {\n    errores.push(\"estado debe ser un texto no vacío\");\n}\n\nif (typeof data.uptime !== \"number\" || !Number.isFinite(data.uptime)) {\n    errores.push(\"uptime debe ser un número válido\");\n}\n\n// Validar rangos razonables\nif (\n    typeof data.temperatura === \"number\" &&\n    (data.temperatura < -40 || data.temperatura > 80)\n) {\n    errores.push(\"temperatura fuera del rango permitido\");\n}\n\nif (\n    typeof data.humedad === \"number\" &&\n    (data.humedad < 0 || data.humedad > 100)\n) {\n    errores.push(\"humedad fuera del rango permitido\");\n}\n\nif (errores.length > 0) {\n    msg.payload = {\n        valido: false,\n        error: \"La telemetría contiene datos inválidos\",\n        detalles: errores,\n        recibido: data\n    };\n\n    return [null, msg];\n}\n\n// Normalizar datos válidos\nmsg.payload = {\n    dispositivo: data.dispositivo.trim(),\n    aula: data.aula.trim(),\n    temperatura: Number(data.temperatura.toFixed(2)),\n    humedad: Number(data.humedad.toFixed(2)),\n    umbral: Number(data.umbral.toFixed(2)),\n    alerta: data.alerta,\n    estado: data.estado.trim().toUpperCase(),\n    uptime: data.uptime,\n    recibido_en: new Date().toISOString()\n};\n\nmsg.headers = {\n    \"Content-Type\": \"application/json\"\n};\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 240,
+        "wires": [
+            [
+                "d6e762c65e1965f1",
+                "53972c7dce1dcd2a"
+            ],
+            [
+                "28fc692e87fca1b8"
+            ]
+        ]
+    },
+    {
+        "id": "d6e762c65e1965f1",
+        "type": "debug",
+        "z": "ad5d2c519a39f174",
+        "name": "Telemetría válida",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "28fc692e87fca1b8",
+        "type": "debug",
+        "z": "ad5d2c519a39f174",
+        "name": "Error de validación",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "53972c7dce1dcd2a",
+        "type": "http request",
+        "z": "ad5d2c519a39f174",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:8000/api/v1/telemetria",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 670,
+        "y": 100,
+        "wires": [
+            [
+                "531cb1899c7f164d"
+            ]
+        ]
+    },
+    {
+        "id": "531cb1899c7f164d",
+        "type": "debug",
+        "z": "ad5d2c519a39f174",
+        "name": "Debug respuesta API",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "mqtt_broker_local",
+        "type": "mqtt-broker",
+        "name": "Mosquitto local",
+        "broker": "127.0.0.1",
+        "port": "1883",
+        "clientid": "nodered-temperatura-dashboard",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {}
+    }
+]
