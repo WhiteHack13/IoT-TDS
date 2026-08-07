@@ -1,0 +1,208 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <DHT.h>
+
+const char* WIFI_SSID = "nombre de la red";
+const char* WIFI_PASSWORD = "contraseña de la red";
+
+const char* MQTT_SERVER = "ip del servidor, o host local";
+const uint16_t MQTT_PORT = 1883;
+
+const char* MQTT_TOPIC = "unev/aulas/aula-01/telemetria";
+
+const char* DEVICE_ID = "esp32-01";
+const char* CLASSROOM_ID = "LAB-IOT";
+
+constexpr uint8_t DHT_PIN = 4;
+constexpr uint8_t DHT_TYPE = DHT11;
+constexpr uint8_t LED_PIN = 2;
+
+constexpr float ALERT_THRESHOLD_C = 30.0F;
+
+constexpr unsigned long PUBLISH_INTERVAL_MS = 5000;
+
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+DHT dht(DHT_PIN, DHT_TYPE);
+
+unsigned long lastPublish = 0;
+
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.print("Conectando al Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("Wi-Fi conectado");
+
+  Serial.print("IP ESP32: ");
+  Serial.println(WiFi.localIP());
+
+  Serial.print("Gateway: ");
+  Serial.println(WiFi.gatewayIP());
+}
+
+void connectMQTT() {
+  while (!mqttClient.connected()) {
+    String clientId =
+      String("UNEV-") +
+      DEVICE_ID +
+      "-" +
+      String(
+        static_cast<uint32_t>(ESP.getEfuseMac()),
+        HEX
+      );
+
+    Serial.print("Conectando al broker MQTT... ");
+
+    if (mqttClient.connect(clientId.c_str())) {
+      Serial.println("conectado");
+    } else {
+      Serial.print("falló, estado=");
+      Serial.println(mqttClient.state());
+
+      delay(3000);
+    }
+  }
+}
+
+const char* calculateStatus(float temperature) {
+  if (temperature < 20.0F) {
+    return "FRIO";
+  }
+
+  if (temperature < 28.0F) {
+    return "CONFORTABLE";
+  }
+
+  if (temperature < ALERT_THRESHOLD_C) {
+    return "CALUROSO";
+  }
+
+  return "ALERTA";
+}
+
+void publishTelemetry() {
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (
+    isnan(temperature) ||
+    isnan(humidity)
+  ) {
+    Serial.println(
+      "Error leyendo el sensor DHT11"
+    );
+
+    return;
+  }
+
+  bool alert =
+    temperature >= ALERT_THRESHOLD_C;
+
+  digitalWrite(
+    LED_PIN,
+    alert ? HIGH : LOW
+  );
+
+  const char* status =
+    calculateStatus(temperature);
+
+  char payload[300];
+
+  int written = snprintf(
+    payload,
+    sizeof(payload),
+    "{"
+      "\"dispositivo\":\"%s\","
+      "\"aula\":\"%s\","
+      "\"temperatura\":%.2f,"
+      "\"humedad\":%.2f,"
+      "\"umbral\":%.2f,"
+      "\"alerta\":%s,"
+      "\"estado\":\"%s\","
+      "\"uptime\":%lu"
+    "}",
+    DEVICE_ID,
+    CLASSROOM_ID,
+    temperature,
+    humidity,
+    ALERT_THRESHOLD_C,
+    alert ? "true" : "false",
+    status,
+    millis()
+  );
+
+  if (
+    written <= 0 ||
+    written >=
+      static_cast<int>(sizeof(payload))
+  ) {
+    Serial.println(
+      "Error construyendo el JSON"
+    );
+
+    return;
+  }
+
+  bool published = mqttClient.publish(
+    MQTT_TOPIC,
+    payload,
+    false
+  );
+
+  Serial.print("Publicación MQTT: ");
+  Serial.println(
+    published ? "OK" : "ERROR"
+  );
+
+  Serial.println(payload);
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  dht.begin();
+
+  connectWiFi();
+
+  mqttClient.setServer(
+    MQTT_SERVER,
+    MQTT_PORT
+  );
+
+  mqttClient.setBufferSize(512);
+}
+
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    connectWiFi();
+  }
+
+  if (!mqttClient.connected()) {
+    connectMQTT();
+  }
+
+  mqttClient.loop();
+
+  unsigned long now = millis();
+
+  if (
+    now - lastPublish >=
+    PUBLISH_INTERVAL_MS
+  ) {
+    lastPublish = now;
+
+    publishTelemetry();
+  }
+}
