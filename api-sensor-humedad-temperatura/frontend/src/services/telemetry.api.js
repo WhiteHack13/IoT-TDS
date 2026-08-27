@@ -2,6 +2,7 @@ import { DEFAULT_TIMEZONE } from "../config/app.config";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const ROOT = `${API_BASE}/api/v1/telemetria`;
+const DEVICES_ROOT = `${API_BASE}/api/v1/dispositivos`;
 
 async function request(path, signal) {
   const response = await fetch(`${ROOT}${path}`, { signal });
@@ -44,4 +45,15 @@ export const telemetryApi = {
   },
   devices: (signal) => request("/dispositivos", signal),
   streamUrl: (device) => `${ROOT}/stream${query({ dispositivo: device })}`,
+  sendCommand: async (command) => {
+    const response = await fetch(`${DEVICES_ROOT}/comandos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comando: command }),
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(payload.mensaje || "No se pudo enviar el comando");
+    return payload;
+  },
 };

@@ -5,6 +5,7 @@ const cors = require("cors");
 
 const pool = require("./config/database");
 const telemetriaRoutes = require("./routes/telemetria.routes");
+const dispositivosRoutes = require("./routes/dispositivos.routes");
 
 const app = express();
 
@@ -42,6 +43,10 @@ app.get("/api/health", async (req, res) => {
 app.use(
   "/api/v1/telemetria",
   telemetriaRoutes
+);
+app.use(
+  "/api/v1/dispositivos",
+  dispositivosRoutes
 );
 
 const PORT = process.env.PORT || 8000;

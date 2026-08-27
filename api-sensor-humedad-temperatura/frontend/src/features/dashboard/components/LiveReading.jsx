@@ -1,10 +1,46 @@
-import { ArrowDown, ArrowUp, Droplets, Thermometer, TriangleAlert, Wifi, WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, BellOff, BellRing, Droplets, LoaderCircle, Thermometer, TriangleAlert, Wifi, WifiOff } from "lucide-react";
+import { telemetryApi } from "../../../services/telemetry.api";
 import { formatDate, formatNumber } from "../../../shared/utils/formatters";
 
 export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZone }) {
   const temperature = summary?.temperatura || {};
   const humidity = summary?.humedad || {};
   const thresholdExceeded = latest?.alerta === true;
+  const [alarmMode, setAlarmMode] = useState(thresholdExceeded ? "active" : "normal");
+  const [sendingCommand, setSendingCommand] = useState(false);
+  const [commandMessage, setCommandMessage] = useState("");
+  const [commandError, setCommandError] = useState("");
+
+  useEffect(() => {
+    setAlarmMode((current) => {
+      if (!thresholdExceeded) return "normal";
+      return current === "silenced" ? current : "active";
+    });
+  }, [thresholdExceeded]);
+
+  const alarmLabel = alarmMode === "active"
+    ? "Alarma activa"
+    : alarmMode === "silenced"
+      ? "Alarma silenciada"
+      : "Alarma normal";
+
+  async function handleAlarmCommand() {
+    const command = alarmMode === "active" ? "BUZZER_OFF" : "BUZZER_ON";
+    setSendingCommand(true);
+    setCommandError("");
+    setCommandMessage("");
+
+    try {
+      const response = await telemetryApi.sendCommand(command);
+      setAlarmMode(command === "BUZZER_OFF" ? "silenced" : "active");
+      setCommandMessage(response.mensaje);
+    } catch (error) {
+      setCommandError(error.message);
+    } finally {
+      setSendingCommand(false);
+    }
+  }
 
   return (
     <aside className="live-reading" aria-labelledby="live-title">
@@ -30,6 +66,29 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
           <span className="threshold-alert-signal" aria-hidden="true" />
         </div>
       )}
+
+      <div className={`alarm-control is-${alarmMode}`}>
+        <div className="alarm-control-status">
+          {alarmMode === "active" ? <BellRing size={20} /> : <BellOff size={20} />}
+          <div>
+            <span>Control remoto · ESP32-01</span>
+            <strong>{alarmLabel}</strong>
+          </div>
+        </div>
+        <button type="button" onClick={handleAlarmCommand} disabled={sendingCommand}>
+          {sendingCommand && <LoaderCircle className="spin" size={16} />}
+          {sendingCommand
+            ? "Enviando..."
+            : alarmMode === "active"
+              ? "Silenciar alarma"
+              : "Activar alarma"}
+        </button>
+        {(commandMessage || commandError) && (
+          <p className={commandError ? "is-error" : "is-success"} role={commandError ? "alert" : "status"}>
+            {commandError || commandMessage}
+          </p>
+        )}
+      </div>
 
       <div className="reading-block temperature-reading">
         <Thermometer size={28} />
