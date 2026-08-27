@@ -7,11 +7,10 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
   const temperature = summary?.temperatura || {};
   const humidity = summary?.humedad || {};
   const currentTemperature = Number(latest?.temperatura);
-  const configuredThreshold = Number(latest?.umbral ?? 30);
+  const alarmThreshold = 30;
   const thresholdExceeded = latest?.alerta === true || (
     Number.isFinite(currentTemperature)
-    && Number.isFinite(configuredThreshold)
-    && currentTemperature >= configuredThreshold
+    && currentTemperature >= alarmThreshold
   );
   const [alarmMode, setAlarmMode] = useState(thresholdExceeded ? "active" : "normal");
   const [sendingCommand, setSendingCommand] = useState(false);
@@ -19,20 +18,18 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
   const [commandError, setCommandError] = useState("");
 
   useEffect(() => {
-    setAlarmMode((current) => {
-      if (!thresholdExceeded) return "normal";
-      return current === "silenced" ? current : "active";
-    });
+    setAlarmMode(thresholdExceeded ? "active" : "normal");
   }, [thresholdExceeded]);
 
-  const alarmLabel = alarmMode === "active"
+  const displayedAlarmMode = thresholdExceeded && alarmMode === "normal" ? "active" : alarmMode;
+  const alarmLabel = displayedAlarmMode === "active"
     ? "Alarma activa"
-    : alarmMode === "silenced"
+    : displayedAlarmMode === "silenced"
       ? "Alarma silenciada"
       : "Alarma normal";
 
   async function handleAlarmCommand() {
-    const command = alarmMode === "active" ? "BUZZER_OFF" : "BUZZER_ON";
+    const command = displayedAlarmMode === "active" ? "BUZZER_OFF" : "BUZZER_ON";
     setSendingCommand(true);
     setCommandError("");
     setCommandMessage("");
@@ -66,16 +63,16 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
           <div>
             <strong>Alerta de temperatura alta</strong>
             <span>
-              La lectura de {formatNumber(latest?.temperatura)} °C superó el umbral de {formatNumber(latest?.umbral)} °C.
+              La lectura de {formatNumber(latest?.temperatura)} °C alcanzó el umbral de {alarmThreshold} °C.
             </span>
           </div>
           <span className="threshold-alert-signal" aria-hidden="true" />
         </div>
       )}
 
-      <div className={`alarm-control is-${alarmMode}`}>
+      <div className={`alarm-control is-${displayedAlarmMode}`}>
         <div className="alarm-control-status">
-          {alarmMode === "active" ? <BellRing size={20} /> : <BellOff size={20} />}
+          {displayedAlarmMode === "active" ? <BellRing size={20} /> : <BellOff size={20} />}
           <div>
             <span>Control remoto · ESP32-01</span>
             <strong>{alarmLabel}</strong>
@@ -85,7 +82,7 @@ export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZo
           {sendingCommand && <LoaderCircle className="spin" size={16} />}
           {sendingCommand
             ? "Enviando..."
-            : alarmMode === "active"
+            : displayedAlarmMode === "active"
               ? "Silenciar alarma"
               : "Activar alarma"}
         </button>
