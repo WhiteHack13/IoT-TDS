@@ -34,7 +34,15 @@ A continuación aprenderás **toda su sintaxis**, desde lo básico hasta lo avan
 
 ---
 
-# 1. TÍTULOS (HEADINGS)
+
+# 1. TÍTULOS (HEADINGS) <h1></h1>
+## título 2 <h2></h2>
+### título 3 <h3></h3>
+#### título 4 <h4></h4>
+##### título 5 <h5></h5>
+###### título 6 <h6></h6>
+parrafo -> <p>
+
 
 Markdown soporta 6 niveles de títulos usando el símbolo `#`.
 ```markdown
@@ -53,11 +61,15 @@ Párrafo normal: solo escribe el texto.
 
 Para un **salto de línea**, deja dos espacios al final o usa `<br>`.
 
-Esto es un párrafo.
+Esto es un párrafo.  
 Esto es otra línea sin crear párrafo nuevo.
 
 ---
 
+**Negrita**  
+*Cursiva*  
+***Negrita y cursiva***  
+~~function asyncTrue~~
 # 3. FORMATO DE TEXTO
 ```
 **Negrita**
@@ -70,11 +82,88 @@ texto en cursiva
 negrita y cursiva
 
 ~~Tachado~~
+
+
+
 texto tachado
 ```
 
+La función para consumir el endpoint es: `function(int x)={ cuerpo...}`
+
 \`Código en línea\` : `Código en línea`
 
+```ts
+import { useRef, useState } from "react";
+import { Avatar, Box, Button, Typography } from "@mui/material";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+
+import { showToast } from "../../../../components/dashboard/Toast";
+import { convertImageFileToWebpBase64 } from "../../../../utils/imageToWebp";
+
+type Props = {
+  value?: string;
+  onChange: (base64Webp: string) => void;
+};
+
+/** Mismo patrón que ProductoImageField (POS Experiencias): convierte la
+ * imagen a WebP en el navegador antes de guardarla. */
+const MarcaImageField = ({ value, onChange }: Props) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isConverting, setIsConverting] = useState(false);
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast.error("El archivo seleccionado no es una imagen");
+      return;
+    }
+
+    setIsConverting(true);
+    try {
+      const webpBase64 = await convertImageFileToWebpBase64(file);
+      onChange(webpBase64);
+    } catch (error) {
+      console.error(error);
+      showToast.error("No se pudo procesar la imagen");
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  return (
+    <Box display="flex" alignItems="end" gap={2}>
+      <Avatar
+        src={value || undefined}
+        variant="rounded"
+        sx={{ width: 100, height: 100, bgcolor: "action.hover" }}
+      >
+        <ImageOutlinedIcon color="disabled" />
+      </Avatar>
+
+      <Box>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => inputRef.current?.click()}
+          disabled={isConverting}
+        >
+          {isConverting ? "Procesando..." : value ? "Cambiar imagen" : "Subir imagen"}
+        </Button>
+        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+          Se convierte automáticamente a WebP
+        </Typography>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
+      </Box>
+    </Box>
+  );
+};
+
+export default MarcaImageField;
+
+```
 texto en código:
 ```
 Bloques de código:
@@ -256,18 +345,38 @@ Texto rojo
 </div>
 ```
 # 19. TABLAS AVANZADAS CON HTML
+```html
+  <table>
+    <tr>
+      <th>Col A</th>
+      <th>Col B</th>
+    </tr>
+    <tr>
+      <td>Dato 1</td>
+      <td>Dato 2</td>--
+    </tr>
+  </table>
 ```
+<style>
+  .colorDeTexto{
+    color:red;
+  }
+  td{
+    color: blue
+  }
+</style>
 <table>
-  <tr>
-    <th>Col A</th>
-    <th>Col B</th>
-  </tr>
-  <tr>
-    <td>Dato 1</td>
-    <td>Dato 2</td>
-  </tr>
-</table>
-```
+    <tr>
+      <th class="colorDeTexto">Col A</th>
+      <th>Col B</th>
+    </tr>
+    <tr>
+      <td>Dato 1</td>
+      <td>Dato 2</td>
+    </tr>
+  </table>
+
+
 # 20. CHECKBOXES ANIDADOS
 - [ ] Tarea principal
     - [x] Subtarea 1
