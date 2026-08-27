@@ -6,7 +6,13 @@ import { formatDate, formatNumber } from "../../../shared/utils/formatters";
 export function LiveReading({ latest, summary, apiConnected, sensorFresh, timeZone }) {
   const temperature = summary?.temperatura || {};
   const humidity = summary?.humedad || {};
-  const thresholdExceeded = latest?.alerta === true;
+  const currentTemperature = Number(latest?.temperatura);
+  const configuredThreshold = Number(latest?.umbral ?? 30);
+  const thresholdExceeded = latest?.alerta === true || (
+    Number.isFinite(currentTemperature)
+    && Number.isFinite(configuredThreshold)
+    && currentTemperature >= configuredThreshold
+  );
   const [alarmMode, setAlarmMode] = useState(thresholdExceeded ? "active" : "normal");
   const [sendingCommand, setSendingCommand] = useState(false);
   const [commandMessage, setCommandMessage] = useState("");
